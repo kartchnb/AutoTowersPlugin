@@ -191,3 +191,8 @@ def IsResetExtruderLine(line: str) -> bool:
 def IsTemperatureChangeLine(line: str) -> bool:
     ''' Check if the given line changes the printing temperature '''
     return line.strip().startswith('M104') or line.strip().startswith('M109')
+
+
+def IsLinAdvChangeLine(line: str) -> bool:
+    ''' Check if the given line changes the printing temperature '''
+    return line.strip().startswith('M900')
