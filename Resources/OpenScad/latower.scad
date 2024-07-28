@@ -21,7 +21,7 @@ Ending_Value = 0.2;
 Value_Change = 0.02;
 
 // The height of each section of the tower
-Section_Height = 8.001;
+Section_Height = 8.401;
 
 // Size of the tower
 Tower_Size = 70;
@@ -81,7 +81,7 @@ Value_Change_Corrected = Ending_Value > Starting_Value
     : -abs(Value_Change);
 
 // Determine how many sections to generate
-Section_Count = ceil(abs(Ending_Value - Starting_Value) / abs(Value_Change) + 1);
+Section_Count = ceil(abs(Ending_Value - Starting_Value) / abs(Value_Change));
 
 // Calculate the font size
 Section_Label_Font_Size = Section_Height * Section_Label_Height_Multiplier;

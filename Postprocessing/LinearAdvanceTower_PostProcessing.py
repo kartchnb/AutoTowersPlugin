@@ -10,7 +10,7 @@ from . import PostProcessingCommon as Common
 
 
 
-def execute(gcode, base_height:float, section_height:float, initial_layer_height:float, layer_height:float, start_kfactor:float, kfactor_change:float, enable_lcd_messages:bool, enable_advanced_gcode_comments:bool):
+def execute(gcode, base_height:float, section_height:float, initial_layer_height:float, layer_height:float, start_kfactor:float, kfactor_change:float, enable_lcd_messages:bool, enable_advanced_gcode_comments:bool, enable_smooth_change:bool):
     
     # Log the post-processing settings
     Logger.log('d', f'Beginning PA Tower post-processing script version {__version__}')
@@ -22,6 +22,7 @@ def execute(gcode, base_height:float, section_height:float, initial_layer_height
     Logger.log('d', f'K-factor change = {kfactor_change} C')
     Logger.log('d', f'Enable LCD messages = {enable_lcd_messages}')
     Logger.log('d', f'Advanced Gcode Comments = {enable_advanced_gcode_comments}')
+    Logger.log('d', f'Smooth K-factor change = {enable_smooth_change}')
 
     # Document the settings in the g-code
     gcode[0] += f'{Common.comment_prefix} PA Tower post-processing script version {__version__}\n'
@@ -33,15 +34,16 @@ def execute(gcode, base_height:float, section_height:float, initial_layer_height
     gcode[0] += f'{Common.comment_prefix} K-factor change = {kfactor_change} C\n'
     gcode[0] += f'{Common.comment_prefix} Enable LCD messages = {enable_lcd_messages}\n'
     gcode[0] += f'{Common.comment_prefix} Advanced Gcode comments = {enable_advanced_gcode_comments}\n'
+    gcode[0] += f'{Common.comment_prefix} Smooth K-factor change = {enable_smooth_change}\n'
 
     # Start at the selected starting K-factor
     current_kfactor = start_kfactor - kfactor_change # The current kfactor will be incremented when the first section is encountered
 
     # Iterate over each line in the g-code
-    for line_index, line, lines, start_of_new_section in Common.LayerEnumerate(gcode, base_height, section_height, initial_layer_height, layer_height, enable_advanced_gcode_comments):
+    for line_index, line, lines, start_of_new_section, start_of_new_layer, current_print_height in Common.LayerEnumerate(gcode, base_height, section_height, initial_layer_height, layer_height, enable_advanced_gcode_comments, enable_smooth_change):
 
         # Handle each new tower section
-        if start_of_new_section:
+        if not enable_smooth_change and start_of_new_section:
 
             # Increment the K-factor for this new tower section
             current_kfactor += kfactor_change
@@ -57,7 +59,21 @@ def execute(gcode, base_height:float, section_height:float, initial_layer_height
                 lines.insert(3, f'M117 K {current_kfactor}')
                 if enable_advanced_gcode_comments :
                     lines.insert(3, f'{Common.comment_prefix} Displaying "K {current_kfactor}" on the LCD')
+        elif enable_smooth_change and start_of_new_layer:
+            # Calculate K-factor from height
+            current_kfactor = start_kfactor + kfactor_change * float(current_print_height) / section_height
+            current_kfactor = round(current_kfactor, 4)
+            # Configure the new K-factor in the gcode
+            if enable_advanced_gcode_comments:
+                lines.insert(2, f'M900 K{current_kfactor} {Common.comment_prefix} setting K-factor to {current_kfactor}')
+            else:
+                lines.insert(2, f'M900 K{current_kfactor}')
 
+            # Display the new K-factor on the printer's LCD
+            if enable_lcd_messages:
+                lines.insert(3, f'M117 K {current_kfactor}')
+                if enable_advanced_gcode_comments:
+                    lines.insert(3, f'{Common.comment_prefix} Displaying "K {current_kfactor}" on the LCD')
         # Handle lines within each section
         else:
             if Common.IsLinAdvChangeLine(line):

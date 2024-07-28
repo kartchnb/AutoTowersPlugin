@@ -80,7 +80,7 @@ class LinearAdvanceTowerController(ControllerBase):
         kfactorChange = self._dataModel.kfactorChange
 
         # Call the post-processing script
-        gcode = PATower_PostProcessing.execute(
+        gcode = LinearAdvanceTower_PostProcessing.execute(
             gcode=gcode, 
             base_height=baseHeight,
             section_height=sectionHeight,
@@ -89,7 +89,8 @@ class LinearAdvanceTowerController(ControllerBase):
             start_kfactor=startKfactor,
             kfactor_change=kfactorChange,
             enable_lcd_messages=enable_lcd_messages,
-            enable_advanced_gcode_comments = enable_advanced_gcode_comments
+            enable_advanced_gcode_comments = enable_advanced_gcode_comments,
+            enable_smooth_change=True
             )
 
         return gcode

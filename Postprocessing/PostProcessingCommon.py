@@ -18,7 +18,7 @@ trailing_inserted_layer_count = 2
 
 
 
-def LayerEnumerate(gcode, base_height:float, section_height:float, initial_layer_height:float, layer_height:float, enable_advanced_gcode_comments:bool):
+def LayerEnumerate(gcode, base_height:float, section_height:float, initial_layer_height:float, layer_height:float, enable_advanced_gcode_comments:bool, enable_smooth_change:bool = False):
     ''' Iterates over the lines in the gcode that is passed in 
         skipping Cura's comment layer and the user-specified start gcode 
         and ignoring post-printing layers '''
@@ -31,6 +31,8 @@ def LayerEnumerate(gcode, base_height:float, section_height:float, initial_layer
 
     # Keep track of whether a line marks the start of a new layer
     start_of_new_section = False
+
+    start_of_new_layer = False
     
     # Keep track of the current print height
     current_print_height = Decimal('0')
@@ -99,11 +101,19 @@ def LayerEnumerate(gcode, base_height:float, section_height:float, initial_layer
                     # Indicate this is NOT the start of a new tower section
                     start_of_new_section = False
 
+                # If this is not the start of a new layer and smooth changing
+                if enable_smooth_change:
+                    start_of_new_layer = True
+                else:
+                    start_of_new_layer = False
+
             # Yield the values for this line
-            yield line_index, line, lines, start_of_new_section
+            yield line_index, line, lines, start_of_new_section, start_of_new_layer, current_print_height
 
             # Once the first line in a new tower section has been processed, remove the new section indicator
             start_of_new_section = False
+            # Once the first line in a new layer has been processed, remove the new layer indicator
+            start_of_new_layer = False
 
         # Reassemble the clump
         gcode[clump_index] = '\n'.join(lines)
